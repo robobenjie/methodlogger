@@ -112,7 +112,6 @@ def log_method(*logger_args, **logger_kwargs):
         arg_strs = arg_strs[1:]
       arg_strs.extend(f"{name}={truncate_str(val)}" for name, val in kwargs.items())
       start_str = f"{time.time():.5f}|{thread_name}: {'. ' * indent}<{func.__name__}({', '.join(arg_strs)})>"
-      previous_start_str = getattr(thread_local, 'start_str', None)
       _print_start_once()
       thread_local.logger_args = logger_args
       thread_local.logger_kwargs = logger_kwargs
@@ -121,7 +120,9 @@ def log_method(*logger_args, **logger_kwargs):
       try:
         thread_local.depth = indent + 1
         result = func(*args, **kwargs)
+        
         if thread_local.start_str == start_str:
+          # No children have been logged: log it as a <selfclose />
           logfn(
               start_str[:-1] + f" -> {truncate_str(result)} />",
               *logger_args,
