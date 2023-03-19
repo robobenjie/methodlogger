@@ -81,14 +81,17 @@ def _print_start_once():
   """
   previous_start_str = getattr(thread_local, 'start_str', None)
   if previous_start_str:
-    logfn(previous_start_str)
+    logfn(
+        previous_start_str,
+        *thread_local.logger_args,
+        **thread_local.logger_kwargs)
   thread_local.start_str = None
 
-def log(message):
+def log(message, *logger_args, **logger_kwargs):
   """Log a string at the current indentation value"""
   indent = getattr(thread_local, 'depth', 0)
   thread_name = threading.current_thread().name
-  print_start_once()
+  _print_start_once()
   logfn(
       f"{time.time():.5f}|{thread_name}: {'. ' * indent}\"{message}\"",
       *logger_args,
@@ -110,10 +113,11 @@ def log_method(*logger_args, **logger_kwargs):
       arg_strs.extend(f"{name}={truncate_str(val)}" for name, val in kwargs.items())
       start_str = f"{time.time():.5f}|{thread_name}: {'. ' * indent}<{func.__name__}({', '.join(arg_strs)})>"
       previous_start_str = getattr(thread_local, 'start_str', None)
-      print_start_once()
-      thread_local.start_str = start_str
+      _print_start_once()
       thread_local.logger_args = logger_args
       thread_local.logger_kwargs = logger_kwargs
+      thread_local.start_str = start_str
+
       try:
         thread_local.depth = indent + 1
         result = func(*args, **kwargs)
